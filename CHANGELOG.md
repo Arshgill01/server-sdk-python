@@ -15,6 +15,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 - Clarify placeholder API keys and redaction of credentials and private call data in SDK documentation.
 
+### Fixed
+
+- Map malformed or non-JSON API responses to the SDK's stable error hierarchy
+  instead of leaking a JSON decoder exception to callers.
+
 ## [0.7.1] - 2026-09-04
 
 ### Added

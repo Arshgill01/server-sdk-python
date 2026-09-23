@@ -5,35 +5,22 @@ from urllib.parse import quote
 import httpx
 
 from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
+from ...types import Response
 from ... import errors
 
+from ...models.agentic_call import AgenticCall
 from ...models.error_envelope import ErrorEnvelope
-from ...models.event_list import EventList
-from ...types import Unset
 
 
 def _get_kwargs(
     call_id: str,
-    *,
-    cursor: str | Unset = UNSET,
-    limit: int | Unset = 50,
 ) -> dict[str, Any]:
-
-    params: dict[str, Any] = {}
-
-    params["cursor"] = cursor
-
-    params["limit"] = limit
-
-    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/v1/calls/{call_id}/events".format(
+        "url": "/v2/calls/{call_id}".format(
             call_id=quote(str(call_id), safe="").replace(".", "%2E"),
         ),
-        "params": params,
     }
 
     return _kwargs
@@ -41,11 +28,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> ErrorEnvelope | EventList | None:
+) -> AgenticCall | ErrorEnvelope | None:
     if response.status_code == 200:
-        response_200 = EventList.from_dict(response.json())
+        response_200 = AgenticCall.from_dict(response.json())
 
         return response_200
+
+    if response.status_code == 400:
+        response_400 = ErrorEnvelope.from_dict(response.json())
+
+        return response_400
 
     if response.status_code == 401:
         response_401 = ErrorEnvelope.from_dict(response.json())
@@ -62,10 +54,10 @@ def _parse_response(
 
         return response_404
 
-    if response.status_code == 429:
-        response_429 = ErrorEnvelope.from_dict(response.json())
+    if response.status_code == 409:
+        response_409 = ErrorEnvelope.from_dict(response.json())
 
-        return response_429
+        return response_409
 
     if response.status_code == 500:
         response_500 = ErrorEnvelope.from_dict(response.json())
@@ -80,7 +72,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[ErrorEnvelope | EventList]:
+) -> Response[AgenticCall | ErrorEnvelope]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -93,30 +85,24 @@ def sync_detailed(
     call_id: str,
     *,
     client: AuthenticatedClient | Client,
-    cursor: str | Unset = UNSET,
-    limit: int | Unset = 50,
-) -> Response[ErrorEnvelope | EventList]:
-    """List Call Events
+) -> Response[AgenticCall | ErrorEnvelope]:
+    """Get Call
 
-     List developer-facing call events.
+     Polling reads persisted state and never performs extraction or initiates a call.
 
     Args:
         call_id (str):
-        cursor (str | Unset):
-        limit (int | Unset):  Default: 50.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ErrorEnvelope | EventList]
+        Response[AgenticCall | ErrorEnvelope]
     """
 
     kwargs = _get_kwargs(
         call_id=call_id,
-        cursor=cursor,
-        limit=limit,
     )
 
     response = client.get_httpx_client().request(
@@ -130,31 +116,25 @@ def sync(
     call_id: str,
     *,
     client: AuthenticatedClient | Client,
-    cursor: str | Unset = UNSET,
-    limit: int | Unset = 50,
-) -> ErrorEnvelope | EventList | None:
-    """List Call Events
+) -> AgenticCall | ErrorEnvelope | None:
+    """Get Call
 
-     List developer-facing call events.
+     Polling reads persisted state and never performs extraction or initiates a call.
 
     Args:
         call_id (str):
-        cursor (str | Unset):
-        limit (int | Unset):  Default: 50.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ErrorEnvelope | EventList
+        AgenticCall | ErrorEnvelope
     """
 
     return sync_detailed(
         call_id=call_id,
         client=client,
-        cursor=cursor,
-        limit=limit,
     ).parsed
 
 
@@ -162,30 +142,24 @@ async def asyncio_detailed(
     call_id: str,
     *,
     client: AuthenticatedClient | Client,
-    cursor: str | Unset = UNSET,
-    limit: int | Unset = 50,
-) -> Response[ErrorEnvelope | EventList]:
-    """List Call Events
+) -> Response[AgenticCall | ErrorEnvelope]:
+    """Get Call
 
-     List developer-facing call events.
+     Polling reads persisted state and never performs extraction or initiates a call.
 
     Args:
         call_id (str):
-        cursor (str | Unset):
-        limit (int | Unset):  Default: 50.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ErrorEnvelope | EventList]
+        Response[AgenticCall | ErrorEnvelope]
     """
 
     kwargs = _get_kwargs(
         call_id=call_id,
-        cursor=cursor,
-        limit=limit,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -197,31 +171,25 @@ async def asyncio(
     call_id: str,
     *,
     client: AuthenticatedClient | Client,
-    cursor: str | Unset = UNSET,
-    limit: int | Unset = 50,
-) -> ErrorEnvelope | EventList | None:
-    """List Call Events
+) -> AgenticCall | ErrorEnvelope | None:
+    """Get Call
 
-     List developer-facing call events.
+     Polling reads persisted state and never performs extraction or initiates a call.
 
     Args:
         call_id (str):
-        cursor (str | Unset):
-        limit (int | Unset):  Default: 50.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ErrorEnvelope | EventList
+        AgenticCall | ErrorEnvelope
     """
 
     return (
         await asyncio_detailed(
             call_id=call_id,
             client=client,
-            cursor=cursor,
-            limit=limit,
         )
     ).parsed

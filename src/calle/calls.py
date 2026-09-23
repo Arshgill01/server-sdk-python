@@ -18,30 +18,30 @@ class CalleCalls:
         self,
         *,
         task: str,
-        recipient: JsonObject | None = None,
-        recipients: list[JsonObject] | None = None,
-        result_schema: JsonObject | None = None,
-        recipient_result_schema: JsonObject | None = None,
+        phone: str,
+        region: str | None = None,
+        locale: str | None = None,
+        idempotency_key: str,
+        result_schema: JsonObject,
         metadata: JsonObject | None = None,
         webhook_url: str | None = None,
-        idempotency_key: str | None = None,
     ) -> JsonObject:
-        if recipient is not None and recipients is not None:
-            raise ValueError("Pass either recipient or recipients, not both.")
+        if not idempotency_key.strip():
+            raise ValueError("A stable idempotency_key is required.")
         body = {
-            "task": task,
-            "recipients": [_normalize_recipient(recipient)] if recipient is not None else recipients,
+            "task": task, "phone": phone, "region": region, "locale": locale,
             "result_schema": result_schema,
-            "recipient_result_schema": recipient_result_schema,
-            "metadata": metadata,
-            "webhook_url": webhook_url,
+            "metadata": metadata, "webhook_url": webhook_url,
         }
         payload = {key: value for key, value in body.items() if value is not None}
-        headers = {"Idempotency-Key": idempotency_key} if idempotency_key else None
-        return self._request("POST", "/v1/calls", json=payload, headers=headers)
+        headers = {"Idempotency-Key": idempotency_key}
+        return self._request("POST", "/v2/calls", json=payload, headers=headers)
 
     def get(self, call_id: str) -> JsonObject:
         return self._request("GET", _call_path(call_id))
+
+    def cancel(self, call_id: str) -> JsonObject:
+        return self._request("POST", f"{_call_path(call_id)}/cancel")
 
     def list_events(self, call_id: str, *, cursor: str | None = None, limit: int | None = None) -> JsonObject:
         params = {key: value for key, value in {"cursor": cursor, "limit": limit}.items() if value is not None}
@@ -57,7 +57,7 @@ class CalleCalls:
         deadline = time.monotonic() + timeout_seconds
         while time.monotonic() <= deadline:
             call = self.get(call_id)
-            if call.get("status") in {"completed", "failed", "canceled"}:
+            if call["result_status"] != "pending":
                 return call
             time.sleep(interval_seconds)
         raise CalleTimeoutError(f"Timed out waiting for CALL-E call {call_id}.")
@@ -88,15 +88,6 @@ class CalleCalls:
         return payload
 
 
-def _normalize_recipient(recipient: JsonObject) -> JsonObject:
-    if "phones" in recipient:
-        return recipient
-    phone = recipient.get("phone")
-    normalized = {key: value for key, value in recipient.items() if key != "phone"}
-    normalized["phones"] = [phone] if phone is not None else []
-    return normalized
-
-
 def _call_path(call_id: str) -> str:
     encoded_call_id = quote(call_id, safe="").replace(".", "%2E")
-    return f"/v1/calls/{encoded_call_id}"
+    return f"/v2/calls/{encoded_call_id}"

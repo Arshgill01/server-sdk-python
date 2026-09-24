@@ -5,22 +5,23 @@ imports it as `calle`.
 
 ## Release infrastructure
 
-Production publishing uses PyPI Trusted Publishing. Configure the publisher
-with these values:
+Production publishing uses the existing `PYPI_API_TOKEN` secret in the GitHub
+`pypi` environment. The token must remain valid and have permission to upload
+`calle-ai`; prefer a project-scoped token. Only the publish job references the
+secret, through the official PyPI action's `password` input. Never print or
+copy its value into source, logs, or pull requests.
 
-- Owner: `CALLE-AI`
-- Repository: `server-sdk-python`
-- Workflow: `publish-python.yml`
-- Environment: `pypi`
-
-Configure the GitHub `pypi` environment with required reviewers, prevent
-self-review, and restrict it to protected release tags. The workflow does not
-use a long-lived PyPI token.
+The GitHub `pypi` environment has no required reviewers and allows `main` and
+`v*` release tags. Publication starts automatically after the release checks
+pass. This token-based workflow does not request an OIDC identity token or
+generate PyPI attestations, which require Trusted Publishing. Token expiry or
+revocation stops publication; there is no automatic authentication fallback.
 
 ## Prepare a release
 
 1. Set a new, previously unpublished stable version in `pyproject.toml` and
-   keep the OpenAPI and generated-client version metadata aligned.
+   update `uv.lock`. Change OpenAPI and generated-client metadata only when
+   the API contract changes; a packaging-only patch keeps the API version.
 2. Move the relevant entries from `Unreleased` in [CHANGELOG.md](./CHANGELOG.md)
    into a section for that version and date.
 3. Run the release gates:
@@ -40,9 +41,8 @@ files, and fresh wheel and source-distribution installs.
 
 1. Create a `vX.Y.Z` tag on the intended commit from `main`.
 2. Publish a non-prerelease GitHub Release for that tag.
-3. Approve the `pypi` environment deployment after checking the tag, version,
-   commit, changelog, and build result.
-4. Confirm that the publish and post-publish verification jobs complete.
+3. Confirm that the publish and post-publish verification jobs complete;
+   no separate environment approval is required.
 
 The workflow rejects a tag that does not exactly match `vX.Y.Z`, differs from
 the version in `pyproject.toml`, or points to a commit not contained in
@@ -53,8 +53,7 @@ failure, or any other response stops the release.
 The workflow builds and validates the wheel and source distribution once and
 uploads them with a SHA-256 manifest. The publish job downloads that artifact
 and rechecks its exact file set, checksums, package version, MIT metadata, and
-LICENSE before handing the same files to Trusted Publishing. Only the publish
-job receives `id-token: write`.
+LICENSE before handing the same files to the token-authenticated PyPI action.
 
 Publishing and merging are separate actions: a push or merge to `main` never
 publishes a package.

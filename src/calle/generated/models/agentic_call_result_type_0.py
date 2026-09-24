@@ -10,13 +10,13 @@ from attrs import field as _attrs_field
 from typing import cast
 
 
-T = TypeVar("T", bound="GoalRunResultType0")
+T = TypeVar("T", bound="AgenticCallResultType0")
 
 
 @_attrs_define
-class GoalRunResultType0:
-    """Parsed result validated against the published result schema and durably persisted, or
-    `null` while pending, unavailable, not applicable, or on a technical error. Its keys vary by Goal.
+class AgenticCallResultType0:
+    """Result validated against result_schema and durably persisted. Null while pending, unavailable, not applicable, or on
+    a technical error. Explicit schema-valid task fallbacks are preserved.
 
     """
 
@@ -35,7 +35,7 @@ class GoalRunResultType0:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        goal_run_result_type_0 = cls()
+        agentic_call_result_type_0 = cls()
 
         additional_properties = {}
         for prop_name, prop_dict in d.items():
@@ -47,8 +47,8 @@ class GoalRunResultType0:
 
             additional_properties[prop_name] = additional_property
 
-        goal_run_result_type_0.additional_properties = additional_properties
-        return goal_run_result_type_0
+        agentic_call_result_type_0.additional_properties = additional_properties
+        return agentic_call_result_type_0
 
     @property
     def additional_keys(self) -> list[str]:

@@ -2,8 +2,8 @@ import httpx
 from attrs import define
 
 from calle.generated import AuthenticatedClient, Client
-from calle.generated.api.calls.get_call import _get_kwargs as get_call_kwargs
-from calle.generated.api.calls.list_call_events import (
+from calle.generated.api.legacy_calls.get_call import _get_kwargs as get_call_kwargs
+from calle.generated.api.legacy_calls.list_call_events import (
     _get_kwargs as list_call_events_kwargs,
 )
 
@@ -69,3 +69,19 @@ def test_generated_call_id_stays_in_one_url_path_segment() -> None:
         )
     finally:
         client.close()
+
+
+def test_generated_single_target_call_paths_encode_opaque_ids() -> None:
+    from calle.generated.api.calls.cancel_agentic_call import _get_kwargs as cancel_kwargs
+    from calle.generated.api.calls.get_agentic_call import _get_kwargs as get_kwargs
+    from calle.generated.api.calls.list_agentic_call_events import _get_kwargs as events_kwargs
+
+    with httpx.Client(base_url="https://api.heycall-e.com") as client:
+        for method, kwargs, suffix in [
+            ("GET", get_kwargs(".."), ""),
+            ("GET", events_kwargs(".."), "/events"),
+            ("POST", cancel_kwargs(".."), "/cancel"),
+        ]:
+            assert client.build_request(method, kwargs["url"]).url.raw_path == (
+                f"/v2/calls/%2E%2E{suffix}".encode()
+            )

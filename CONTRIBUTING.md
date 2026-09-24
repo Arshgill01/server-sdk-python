@@ -51,14 +51,13 @@ In scope:
 - List call events.
 - List and read published Goals.
 - Create a Goal Run with a durable idempotency key.
-- Poll until a Goal Run has either a result or an error.
+- Poll until a Goal Run's `result_status` is no longer `pending`.
 - Receive finalized terminal webhook events without requiring signature
   material.
 
 Out of scope:
 
 - Async client support.
-- Cancel calls.
 - Recurring or scheduled calls.
 - Goal authoring and publishing.
 - Project-level webhook management.
